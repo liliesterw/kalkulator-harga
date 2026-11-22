@@ -79,6 +79,8 @@ input.bad{border-color:var(--danger);background:#fdecea}
 .item-head input{font-weight:700;flex:1}
 .fields{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
 .empty{color:var(--muted);font-size:14px;margin:6px 0}
+.stepper{display:flex;gap:8px;flex-wrap:wrap}
+.stepper .btn{min-height:44px;font-size:15px}
 
 /* panel kanan */
 .side-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:18px}
@@ -140,13 +142,7 @@ dl .tot dt,dl .tot dd{color:var(--text);font-weight:800}
 
 
 
-<header class="top">
-  <div class="search">
-    <label>Mulai dari contoh struktur
-      <select id="preset"></select>
-    </label>
-  </div>
-</header>
+
 
 <div class="content">
   <div class="crumb">Penawaran harga / Kalkulator</div>
@@ -155,16 +151,11 @@ dl .tot dt,dl .tot dd{color:var(--text);font-weight:800}
     <button class="btn primary" id="openQ" type="button">Buat penawaran harga</button>
   </div>
 
-  <!-- ringkasan pesanan -->
   <section class="card">
-    <div class="facts">
-      <div class="fact"><i>P</i><div><small>Pelanggan</small><b id="fCust">-</b></div></div>
-      <div class="fact"><i>O</i><div><small>Nama order</small><b id="fOrder">-</b></div></div>
-      <div class="fact"><i>W</i><div><small>Lebar bahan</small><b id="fW">-</b></div></div>
-      <div class="fact"><i>R</i><div><small>Roll bagus per produksi</small><b id="fR">-</b></div></div>
-      <div class="fact"><i>L</i><div><small>Total loss</small><b id="fLoss">-</b></div></div>
-      <div class="fact"><i>K</i><div><small>Kurs</small><b id="fKurs">-</b></div></div>
-    </div>
+    <label style="font-size:15px;color:var(--text)">Mulai dari contoh struktur
+      <select id="preset" style="font-size:16px;min-height:46px;margin-top:6px"></select>
+    </label>
+    <p class="desc" style="margin:8px 0 0">Pilih struktur untuk mengisi bahan, lem, dan biaya dasar otomatis. Angka bisa diubah setelahnya.</p>
   </section>
 
   <div class="cols">
@@ -185,6 +176,7 @@ dl .tot dt,dl .tot dd{color:var(--text);font-weight:800}
           <label>Panjang produksi (m)<input data-k="runLen" data-req type="number" min="1" inputmode="decimal"></label>
         </div>
         <div class="hint" id="widthHint"></div>
+        
       </section>
 
       <!-- 2 -->
@@ -202,8 +194,9 @@ dl .tot dt,dl .tot dd{color:var(--text);font-weight:800}
         <div class="grid">
           <label>Jumlah warna<input data-k="colors" type="number" min="0" step="1" inputmode="numeric"></label>
           <label>Kecepatan mesin (meter per menit)<input data-k="speed" type="number" min="0" step="1" inputmode="numeric"></label>
-          <label>Biaya mesin (Rp per jam)<input data-k="machineRate" type="number" min="0" step="1000" inputmode="numeric"></label>
+          <label>Biaya mesin (Rp per jam)<input data-k="machineRate" data-money type="text" inputmode="numeric"></label>
         </div>
+        
         <div class="sub">Tingkat kesulitan cetak</div>
         <div class="seg" role="group" aria-label="Tingkat kesulitan cetak">
           <button type="button" data-diff="gampang">Gampang</button>
@@ -240,11 +233,12 @@ dl .tot dt,dl .tot dd{color:var(--text);font-weight:800}
       <section class="card" id="sec-5">
         <div class="card-head"><h2><span class="step-no">5</span>Biaya tambahan dan harga jual</h2></div>
         <div class="grid">
-          <label>Biaya tenaga kerja / T. Kerja (Rp per produksi)<input data-k="fixed" type="number" min="0" step="1000" inputmode="numeric"></label>
+          <label>Biaya tenaga kerja / T. Kerja (Rp per produksi)<input data-k="fixed" data-money type="text" inputmode="numeric"></label>
           <label>Loss slitting (%)<input data-k="lossSlit" type="number" step="0.5" min="0" max="99" inputmode="decimal"></label>
           <label>Keuntungan / profit (%)<input data-k="profit" type="number" step="0.5" inputmode="decimal"></label>
-          <label>Kurs (Rp per $1)<input data-k="kurs" type="number" min="0" step="10" inputmode="numeric"></label>
+          <label>Kurs (Rp per $1)<input data-k="kurs" data-money type="text" inputmode="numeric"></label>
           <label>PPN (%)<input data-k="ppn" type="number" step="0.5" min="0" inputmode="decimal"></label>
+        <label>MOQ, minimal order (roll)<input data-k="moq" type="number" min="0" step="1" inputmode="numeric"></label>
         </div>
         <div class="hint" id="lossHint"></div>
       </section>
@@ -252,11 +246,12 @@ dl .tot dt,dl .tot dd{color:var(--text);font-weight:800}
 
     <aside>
       <div class="side-card price-card">
-        <h3>Harga jual per roll (incl. PPN)</h3>
+        <h3 id="priceLabel">Harga jual per roll (incl. PPN)</h3>
         <div class="price" id="price">Rp 0</div>
         <div class="price-sub" id="priceSub">Lengkapi data untuk melihat harga</div>
         <button class="btn" id="openQ2" type="button">Buat penawaran harga</button>
       </div>
+      <div class="warn" id="moqWarn" hidden></div>
       <div class="warn" id="warn" hidden></div>
       <div class="side-card">
         <h3>Rincian biaya produksi</h3>
@@ -273,11 +268,12 @@ dl .tot dt,dl .tot dd{color:var(--text);font-weight:800}
       <div class="side-card">
         <h3>Per roll</h3>
         <dl>
-          <dt>Roll per produksi</dt><dd id="oR">-</dd>
+          <dt id="lblR">Roll per produksi</dt><dd id="oR">-</dd>
           <dt>Total loss</dt><dd id="oLoss">-</dd>
           <dt>Berat per roll</dt><dd id="oKg">-</dd>
+      <dt>Waktu cetak per produksi</dt><dd id="oTime">-</dd>
           <div class="sep"></div>
-          <dt>Biaya per roll</dt><dd id="oC">-</dd>
+          <dt id="lblC">Biaya per roll</dt><dd id="oC">-</dd>
           <dt>Dengan profit (sebelum PPN)</dt><dd id="oPr">-</dd>
           <dt>PPN</dt><dd id="oPpn">-</dd>
         </dl>
@@ -326,21 +322,22 @@ const LOSS_DEFAULT = {
 
 const PRESETS = {
   "Tidak pakai contoh": null,
-  "OPP + PP (2 lapis)": {trim:20,fixed:55000,diff:"gampang",lossCetak:20,lossLam:0,lossSlit:0,colors:0,speed:0,machineRate:0,inkG:0,tlR:.8,lamCount:0,layers:[["OPP",20,.91,1.26],["PP putih",18,.91,1.23]],lam:[]},
-  "OPP + PP + CPP (3 lapis)": {trim:20,fixed:60000,diff:"gampang",lossCetak:20,lossLam:0,lossSlit:0,colors:4,speed:0,machineRate:0,inkG:0,tlR:.8,lamCount:0,layers:[["OPP",20,.91,1.28],["PP",20,.91,1.24],["CPP",40,.91,1.43]],lam:[]},
-  "Laminasi dry (Nylon + LLDPE)": {trim:25,fixed:35000,diff:"gampang",lossCetak:20,lossLam:0,lossSlit:0,colors:5,speed:0,machineRate:0,inkG:0,tlR:.8,lamCount:1,layers:[["Nylon",15,1.16,4.1],["LLDPE",50,.92,2.46]],lam:[[3,3.67]]},
-  "Laminasi dry ganda (PET / ALU / CPP)": {trim:20,fixed:55000,diff:"gampang",lossCetak:20,lossLam:0,lossSlit:0,colors:0,speed:0,machineRate:0,inkG:0,tlR:.8,lamCount:2,layers:[["PET",12,1.4,1.25],["ALU",6.5,2.71,3.9],["CPP",50,.91,1.33]],lam:[[3,3.67],[3,4.67]]},
-  "Ekstrusi (Nylon / PE / LLDPE)": {trim:25,fixed:50000,diff:"gampang",lossCetak:0,lossLam:20,lossSlit:0,colors:0,speed:0,machineRate:0,inkG:0,tlR:.8,lamCount:1,layers:[["Nylon",15,1.16,4.1],["PE",15,.92,2],["LLDPE",50,.92,2.46]],lam:[[3,4.33]]},
-  "Sandwich (PET / PE / ALU / C4)": {trim:20,fixed:65000,diff:"gampang",lossCetak:0,lossLam:20,lossSlit:0,colors:0,speed:0,machineRate:0,inkG:0,tlR:.8,lamCount:2,layers:[["PET",12,1.4,2.15],["PE",15,.91,2],["ALU",7,2.75,5.4],["C4",25,.91,2.35]],lam:[[3,4.33],[3,7.33]]},
-  "Cetak saja (OPP)": {trim:20,fixed:35000,diff:"susah",lossCetak:25,lossLam:0,lossSlit:0,colors:5,speed:0,machineRate:0,inkG:0,tlR:.8,lamCount:0,layers:[["OPP",20,.91,1.2]],lam:[]},
-  "PVC shrink": {trim:25,fixed:0,diff:"gampang",lossCetak:0,lossLam:0,lossSlit:0,colors:0,speed:0,machineRate:0,inkG:0,tlR:.6,lamCount:0,layers:[["PVC",0,1.35,0]],lam:[]},
-  "Kosong (isi sendiri)": {trim:20,fixed:0,diff:"gampang",lossCetak:0,lossLam:0,lossSlit:0,colors:0,speed:0,machineRate:0,inkG:0,tlR:.8,lamCount:0,layers:[["Lapisan 1",0,1,0]],lam:[]}
+  "OPP + PP (2 lapis)": {trim:20,fixed:55000,diff:"gampang",lossCetak:20,lossLam:0,lossSlit:0,colors:0,speed:150,machineRate:0,inkG:0,tlR:.8,lamCount:0,layers:[["OPP",20,.91,1.26],["PP putih",18,.91,1.23]],lam:[]},
+  "OPP + PP + CPP (3 lapis)": {trim:20,fixed:60000,diff:"gampang",lossCetak:20,lossLam:0,lossSlit:0,colors:4,speed:150,machineRate:0,inkG:0,tlR:.8,lamCount:0,layers:[["OPP",20,.91,1.28],["PP",20,.91,1.24],["CPP",40,.91,1.43]],lam:[]},
+  "Laminasi dry (Nylon + LLDPE)": {trim:25,fixed:35000,diff:"gampang",lossCetak:20,lossLam:0,lossSlit:0,colors:5,speed:150,machineRate:0,inkG:0,tlR:.8,lamCount:1,layers:[["Nylon",15,1.16,4.1],["LLDPE",50,.92,2.46]],lam:[[3,3.67]]},
+  "Laminasi dry ganda (PET / ALU / CPP)": {trim:20,fixed:55000,diff:"gampang",lossCetak:20,lossLam:0,lossSlit:0,colors:0,speed:150,machineRate:0,inkG:0,tlR:.8,lamCount:2,layers:[["PET",12,1.4,1.25],["ALU",6.5,2.71,3.9],["CPP",50,.91,1.33]],lam:[[3,3.67],[3,4.67]]},
+  "Ekstrusi (Nylon / PE / LLDPE)": {trim:25,fixed:50000,diff:"gampang",lossCetak:0,lossLam:20,lossSlit:0,colors:0,speed:150,machineRate:0,inkG:0,tlR:.8,lamCount:1,layers:[["Nylon",15,1.16,4.1],["PE",15,.92,2],["LLDPE",50,.92,2.46]],lam:[[3,4.33]]},
+  "Sandwich (PET / PE / ALU / C4)": {trim:20,fixed:65000,diff:"gampang",lossCetak:0,lossLam:20,lossSlit:0,colors:0,speed:150,machineRate:0,inkG:0,tlR:.8,lamCount:2,layers:[["PET",12,1.4,2.15],["PE",15,.91,2],["ALU",7,2.75,5.4],["C4",25,.91,2.35]],lam:[[3,4.33],[3,7.33]]},
+  "Cetak saja (OPP)": {trim:20,fixed:35000,diff:"susah",lossCetak:25,lossLam:0,lossSlit:0,colors:5,speed:150,machineRate:0,inkG:0,tlR:.8,lamCount:0,layers:[["OPP",20,.91,1.2]],lam:[]},
+  "PVC shrink": {trim:25,fixed:0,diff:"gampang",lossCetak:0,lossLam:0,lossSlit:0,colors:0,speed:150,machineRate:0,inkG:0,tlR:.6,lamCount:0,layers:[["PVC",0,1.35,0]],lam:[]},
+  "Kosong (isi sendiri)": {trim:20,fixed:0,diff:"gampang",lossCetak:0,lossLam:0,lossSlit:0,colors:0,speed:150,machineRate:0,inkG:0,tlR:.8,lamCount:0,layers:[["Lapisan 1",0,1,0]],lam:[]}
 };
 
 const S = {order:"",cust:"",slit:400,uc:2,rollLen:1000,runLen:4000,trim:20,
   diff:"gampang",lossCetak:LOSS_DEFAULT.gampang,speed:150,machineRate:0,
   colors:0,inkG:0,inkP:3.8,tlR:.8,tlP:1.1,
   lamCount:0,lossLam:0,lossSlit:0,fixed:55000,profit:25,kurs:16800,ppn:11,
+  moq:0,
   layers:[],lam:[]};
 const LAST = {idr:0, rolls:0};
 
@@ -349,6 +346,7 @@ const n = v => { const x = parseFloat(v); return isFinite(x) ? x : 0; };
 const esc = t => String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const usd = v => "$ " + v.toLocaleString("id-ID",{minimumFractionDigits:2,maximumFractionDigits:2});
 const rp  = v => "Rp " + Math.round(v).toLocaleString("id-ID");
+const fmtMoney = v => Math.round(v).toLocaleString("id-ID");
 const kg  = v => v.toLocaleString("id-ID",{minimumFractionDigits:1,maximumFractionDigits:2}) + " kg";
 
 /* ---------- tampilan ---------- */
@@ -383,7 +381,7 @@ function renderLams(){
 }
 
 function syncInputs(){
-  document.querySelectorAll("[data-k]").forEach(e => e.value = S[e.dataset.k]);
+  document.querySelectorAll("[data-k]").forEach(e => e.value = e.hasAttribute("data-money") ? (S[e.dataset.k] ? fmtMoney(S[e.dataset.k]) : "") : S[e.dataset.k]);
   document.querySelectorAll("[data-diff]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.diff===S.diff)));
 }
 
@@ -402,7 +400,9 @@ function calc(){
   const kurs = n(S.kurs);
   const matW = n(S.slit)*n(S.uc) + n(S.trim);
   const wm = matW/1000, run = n(S.runLen), roll = n(S.rollLen), uc = n(S.uc);
-  const ready = n(S.slit)>0 && uc>0 && run>0 && roll>0;
+  const unitLen = roll;
+  const unitWord = "roll";
+  const ready = n(S.slit)>0 && uc>0 && run>0 && unitLen>0;
 
   // bahan
   let layerUsd = 0, layerKg = 0;
@@ -423,9 +423,11 @@ function calc(){
   $("inkHint").textContent = inkKg>0
     ? `Tinta = ${n(S.colors)} warna × ${n(S.inkG)} gram × ${run} m = ${kg(inkKg)}. Thinner ${kg(thinKg)}.`
     : "Isi jumlah warna dan gram tinta untuk menghitung biaya tinta.";
-  $("machHint").textContent = hours>0
-    ? `Waktu cetak ≈ ${hours.toFixed(1)} jam (${run} m ÷ ${n(S.speed)} m per menit)`
-    : "Isi kecepatan mesin untuk menghitung waktu cetak.";
+  const tAt = v => v>0 ? (run/v)/60 : 0;
+  $("machHint").textContent = run>0
+    ? `Perbandingan waktu cetak: 120 m/menit ≈ ${tAt(120).toFixed(1)} jam · 150 ≈ ${tAt(150).toFixed(1)} jam · 180 ≈ ${tAt(180).toFixed(1)} jam`
+    : "Isi panjang produksi untuk melihat perkiraan waktu cetak.";
+  $("oTime").textContent = hours>0 ? hours.toFixed(1)+" jam" : "-";
   $("diffHint").textContent = S.diff==="susah"
     ? `Cetak susah: loss default ${LOSS_DEFAULT.susah}%. Boleh diubah.`
     : `Cetak gampang: loss default ${LOSS_DEFAULT.gampang}%. Boleh diubah.`;
@@ -448,7 +450,7 @@ function calc(){
   // loss: dijumlahkan seperti di file RUMUS_OPP-PP
   const lossTotal = n(S.lossCetak)+n(S.lossLam)+n(S.lossSlit);
   const yieldF = Math.max(0, 100-lossTotal)/100;
-  const rawRolls = ready ? (run/roll)*uc : 0;
+  const rawRolls = ready ? (run/unitLen)*uc : 0;
   const rolls = rawRolls*yieldF;
   const perRoll = rolls>0 ? total/rolls : 0;
   const withP = perRoll*(1+n(S.profit)/100);
@@ -465,6 +467,9 @@ function calc(){
   $("widthHint").textContent = matW>0 ? `Lebar bahan = ${n(S.slit)} mm × ${uc} jalur + ${n(S.trim)} mm trim = ${matW} mm` : "";
 
   const dash = v => rolls>0 ? v : "-";
+  const belowMoq = n(S.moq)>0 && rolls>0 && rolls<n(S.moq);
+  $("moqWarn").hidden = !belowMoq;
+  $("moqWarn").textContent = belowMoq ? `Di bawah MOQ: produksi ${rolls.toFixed(1)} ${unitWord}, minimal ${n(S.moq)} ${unitWord}. Harga per roll bisa lebih tinggi.` : "";
   $("oR").textContent = rolls>0 ? rolls.toFixed(1) : "-";
   $("oLoss").textContent = lossTotal.toFixed(1)+" %";
   $("oKg").textContent = kgRoll>0 ? kgRoll.toFixed(2)+" kg" : "-";
@@ -478,13 +483,6 @@ function calc(){
   $("oPr").textContent = dash(rp(withP));
   $("oPpn").textContent = dash(rp(ppnRp)) + ` (${n(S.ppn)}%)`;
 
-  // ringkasan
-  $("fCust").textContent = S.cust || "-";
-  $("fOrder").textContent = S.order || "-";
-  $("fW").textContent = matW>0 ? matW+" mm" : "-";
-  $("fR").textContent = rolls>0 ? rolls.toFixed(1)+" roll" : "-";
-  $("fLoss").textContent = lossTotal.toFixed(1)+" %";
-  $("fKurs").textContent = kurs>0 ? rp(kurs)+" per $1" : "-";
 
   $("price").textContent = rp(inc);
   $("barV").textContent = rp(inc);
@@ -493,7 +491,7 @@ function calc(){
   const missing = [];
   if(!(n(S.slit)>0)) missing.push("lebar slitting");
   if(!(uc>0)) missing.push("jumlah jalur");
-  if(!(roll>0)) missing.push("panjang roll");
+  if(!(unitLen>0)) missing.push("panjang roll");
   if(!(run>0)) missing.push("panjang produksi");
   if(!S.layers.length) missing.push("bahan");
   if(!(kurs>0)) missing.push("kurs");
@@ -511,7 +509,13 @@ document.addEventListener("input", e => {
   const t = e.target;
   const row = t.closest(".item");
   if(t.dataset.k){
-    S[t.dataset.k] = t.type==="number" ? n(t.value) : t.value;
+    if(t.hasAttribute("data-money")){
+      const v = n(t.value.replace(/\D/g,""));
+      S[t.dataset.k] = v;
+      t.value = v ? fmtMoney(v) : "";
+    } else {
+      S[t.dataset.k] = t.type==="number" ? n(t.value) : t.value;
+    }
     if(t.dataset.k==="lamCount") renderLams();
   } else if(t.dataset.l && row){
     const f = t.dataset.l;
@@ -550,6 +554,8 @@ function renderQuote(){
   const tot = sub+ppnV;
   const d = $("qDate").value ? new Date($("qDate").value+"T00:00:00") : new Date();
   const ds = d.toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"});
+  const unitWord = "roll";
+  const moqNote = n(S.moq)>0 && qty<n(S.moq) ? `<p><b>Catatan:</b> jumlah order di bawah MOQ (minimal ${n(S.moq)} ${unitWord}).</p>` : "";
   const struktur = S.layers.map(l=>`${esc(l.name)} ${l.mic} µm`).join(" / ") || "-";
 
   $("paper").innerHTML = `
@@ -563,9 +569,10 @@ function renderQuote(){
       <span>UP</span><span>: ${esc($("qUp").value)}</span>
       <span>Perihal</span><span>: ${esc(S.order || "Flexible packaging")}</span>
     </div>
+    ${moqNote}
     <p>Dengan hormat, bersama ini kami sampaikan penawaran harga sebagai berikut:</p>
     <table>
-      <tr><th>Deskripsi</th><th class="r">Jumlah (roll)</th><th class="r">Harga / roll</th><th class="r">Total</th></tr>
+      <tr><th>Deskripsi</th><th class="r">Jumlah (${unitWord})</th><th class="r">Harga / ${unitWord}</th><th class="r">Total</th></tr>
       <tr>
         <td><b>${esc(S.order || "Flexible packaging")}</b><br>Struktur: ${struktur}<br>Lebar slitting ${n(S.slit)} mm, panjang ${n(S.rollLen)} m per roll</td>
         <td class="r">${qty.toLocaleString("id-ID")}</td><td class="r">${rp(price)}</td><td class="r">${rp(sub)}</td>
