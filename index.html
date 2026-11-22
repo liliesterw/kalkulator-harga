@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kalkulator Harga Roll</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* WARNA: merah #e51800 hanya untuk tanda bahaya/error. Tombol & aksen memakai warna lembut. */
+:root{
+  --brand:#0c1f8f;        /* navy dari screenshot: tombol, aktif, kartu harga */
+  --brand-dark:#071566;
+  --accent:#2f6bff;       /* biru terang: link, fokus, aksen */
+  --brand-tint:#e8eeff;
+  --side:#0c1f8f; --danger:#e51800;
+  --bg:#f4f6fb; --card:#ffffff;
+  --text:#131a3a; --muted:#5a6384; --line:#dfe4f0;
+  --ok:#11794a; --ok-tint:#e3f5ec;
+  --warn-bg:#fff4d6; --warn-text:#7a5200;
+  color-scheme:light; box-sizing:border-box;
+}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 "Plus Jakarta Sans",Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+
+/* topbar */
+.top{background:#fff;border-bottom:1px solid var(--line);padding:12px 28px;display:flex;align-items:center;justify-content:space-between;gap:14px;position:sticky;top:0;z-index:5}
+.top .search{flex:1;max-width:420px}
+.top label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);font-weight:600}
+select{font:inherit;font-size:15px;color:var(--text);background:#fff;border:1px solid #cfd4dc;border-radius:10px;padding:9px 12px;min-height:42px;width:100%}
+
+/* konten */
+.content{padding:24px 28px 60px;max-width:1200px;margin:0 auto}
+.crumb{font-size:14px;color:var(--muted)}
+.head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:6px 0 18px}
+.head h1{font-size:26px;margin:0;font-weight:800}
+.badge{display:inline-block;font-size:13px;font-weight:700;padding:5px 12px;border-radius:999px;background:var(--ok-tint);color:var(--ok);margin-left:10px;vertical-align:middle}
+.badge.no{background:var(--warn-bg);color:var(--warn-text)}
+.btn{font:inherit;font-size:15px;font-weight:600;cursor:pointer;border-radius:10px;padding:10px 16px;min-height:44px;border:1px solid #cfd4dc;background:#fff;color:var(--text)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.primary:hover{background:var(--brand-dark)}
+.btn.ghost{border:0;background:none;color:var(--muted);min-height:36px;padding:6px 8px;font-size:14px}
+.btn.ghost:hover{color:var(--danger)}
+.btn.add{width:100%;border:1.5px dashed var(--brand);color:var(--brand);background:none}
+
+.cols{display:grid;gap:18px;grid-template-columns:1fr}
+@media(min-width:1100px){.cols{grid-template-columns:1fr 340px;align-items:start}}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:18px;scroll-margin-top:90px}
+.card h2{font-size:17px;margin:0 0 4px;font-weight:700}
+.card .desc{color:var(--muted);font-size:14px;margin:0 0 16px}
+.card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.card-head h2{margin:0}
+.step-no{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;font-weight:700;margin-right:8px;vertical-align:middle}
+
+/* ringkasan (gaya "info list") */
+.facts{display:grid;gap:14px 24px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.fact{display:flex;gap:10px;align-items:flex-start}
+.fact i{font-style:normal;width:30px;height:30px;border-radius:8px;background:var(--brand-tint);color:var(--brand);display:grid;place-items:center;font-weight:800;flex:none}
+.fact small{display:block;color:var(--muted);font-size:13px}
+.fact b{font-size:15px}
+
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+label{display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--muted);font-weight:600}
+input{font:inherit;font-size:15px;color:var(--text);background:#fff;border:1px solid #cfd4dc;border-radius:10px;padding:9px 12px;min-height:42px;width:100%;min-width:0}
+input.bad{border-color:var(--danger);background:#fdecea}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.hint{font-size:13.5px;color:var(--muted);margin-top:12px;background:#f7f8fa;border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+.hint:empty{display:none}
+.sub{font-size:14px;font-weight:700;margin:20px 0 10px;color:var(--text)}
+
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:360px}
+.seg button{font:inherit;font-size:15px;font-weight:700;min-height:44px;border-radius:10px;border:1px solid #cfd4dc;background:#fff;color:var(--muted);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:#fff}
+
+.item{border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px;background:#fafbfc}
+.item-head{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.item-head input{font-weight:700;flex:1}
+.fields{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.empty{color:var(--muted);font-size:14px;margin:6px 0}
+
+/* panel kanan */
+.side-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:18px}
+.side-card h3{font-size:15px;margin:0 0 10px;font-weight:700}
+.price-card{background:var(--brand);color:#fff;border-color:var(--brand)}
+.price-card h3{color:rgba(255,255,255,.8)}
+.price{font-size:36px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums;margin:2px 0;color:#fff}
+.price-sub{font-size:14px;color:rgba(255,255,255,.85)}
+.price-card .btn{width:100%;margin-top:14px;background:#fff;border-color:#fff;color:var(--brand);font-weight:700}
+.warn{background:var(--warn-bg);color:var(--warn-text);border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:12px}
+dl{display:grid;grid-template-columns:1fr auto;gap:8px 12px;margin:0;font-size:14px;font-variant-numeric:tabular-nums}
+dt{color:var(--muted)}dd{margin:0;text-align:right;font-weight:600}
+dl .sep{grid-column:1/-1;border-top:1px solid var(--line);margin:4px 0}
+dl .tot dt,dl .tot dd{color:var(--text);font-weight:800}
+
+/* bar bawah (hanya di layar kecil) */
+#bar{display:none}
+@media(max-width:1099px){.top{padding:12px 16px}.content{padding:16px 14px 120px}}
+@media(max-width:700px){.top .search{max-width:none}}
+@media(max-width:1099px){
+  #bar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:10;background:#fff;color:var(--text);align-items:center;justify-content:space-between;gap:12px;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));box-shadow:0 -4px 14px rgba(0,0,0,.08);border-top:1px solid var(--line)}
+  #bar small{display:block;color:var(--muted);font-size:13px}
+  #bar b{font-size:22px;font-variant-numeric:tabular-nums;color:var(--brand-dark)}
+  #bar .btn{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:700;min-height:48px}
+}
+
+/* penawaran */
+#quote{display:none;position:fixed;inset:0;z-index:20;background:rgba(10,16,21,.6);overflow:auto}
+#quote.on{display:block}
+.qwrap{max-width:900px;margin:24px auto;background:#fff;border-radius:14px;overflow:hidden}
+.qform{padding:18px;border-bottom:1px solid var(--line)}
+.qform .grid{margin-bottom:12px}
+.qactions{display:flex;justify-content:space-between;gap:10px;padding:12px 18px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:1;flex-wrap:wrap;align-items:center}
+.qactions .right{display:flex;gap:8px;flex-wrap:wrap}
+.preview{padding:0 0 10px;background:#eef1f4}
+.paper{background:#fff;color:#14202b;max-width:760px;margin:18px auto;padding:34px 38px;font-size:15px;line-height:1.5;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.paper .hd{display:flex;justify-content:space-between;gap:20px;border-bottom:3px solid var(--brand);padding-bottom:12px;margin-bottom:16px}
+.paper h3{margin:0;font-size:21px}
+.paper .co{font-size:13px;color:#445}
+.paper .meta{display:grid;grid-template-columns:90px 1fr;gap:2px 8px;margin-bottom:12px}
+.paper table{width:100%;border-collapse:collapse;margin:14px 0}
+.paper th,.paper td{border:1px solid #bcc6cf;padding:7px 9px;text-align:left;vertical-align:top}
+.paper th{background:#f3f5f8}
+.r{text-align:right !important;white-space:nowrap}
+.paper .sig{margin-top:40px;display:flex;justify-content:space-between}
+.paper .sig div{width:200px;text-align:center}
+.paper .sig span{display:block;margin-top:60px;border-top:1px solid #14202b;padding-top:4px}
+@media print{
+  body>*:not(#quote){display:none !important}
+  #quote{position:static;background:none;display:block !important}
+  .qwrap{margin:0;box-shadow:none;max-width:none}
+  .qform,.qactions{display:none !important}
+  .preview{background:none}
+  .paper{margin:0;box-shadow:none;padding:0;max-width:none}
+}
+</style>
+</head>
+<body>
+
+
+
+<header class="top">
+  <div class="search">
+    <label>Mulai dari contoh struktur
+      <select id="preset"></select>
+    </label>
+  </div>
+</header>
+
+<div class="content">
+  <div class="crumb">Penawaran harga / Kalkulator</div>
+  <div class="head">
+    <h1>Kalkulator harga roll <span class="badge no" id="status">Belum lengkap</span></h1>
+    <button class="btn primary" id="openQ" type="button">Buat penawaran harga</button>
+  </div>
+
+  <!-- ringkasan pesanan -->
+  <section class="card">
+    <div class="facts">
+      <div class="fact"><i>P</i><div><small>Pelanggan</small><b id="fCust">-</b></div></div>
+      <div class="fact"><i>O</i><div><small>Nama order</small><b id="fOrder">-</b></div></div>
+      <div class="fact"><i>W</i><div><small>Lebar bahan</small><b id="fW">-</b></div></div>
+      <div class="fact"><i>R</i><div><small>Roll bagus per produksi</small><b id="fR">-</b></div></div>
+      <div class="fact"><i>L</i><div><small>Total loss</small><b id="fLoss">-</b></div></div>
+      <div class="fact"><i>K</i><div><small>Kurs</small><b id="fKurs">-</b></div></div>
+    </div>
+  </section>
+
+  <div class="cols">
+    <div>
+      <!-- 1 -->
+      <section class="card" id="sec-1">
+        <div class="card-head"><h2><span class="step-no">1</span>Pesanan dan ukuran</h2></div>
+        <p class="desc">Lebar bahan dihitung otomatis dari lebar slitting, jumlah jalur, dan trim.</p>
+        <div class="grid">
+          <label>Nama pelanggan<input data-k="cust" type="text" placeholder="Contoh: PT Maju Jaya"></label>
+          <label>Nama order<input data-k="order" type="text" placeholder="Contoh: Bag kerupuk 250gr"></label>
+        </div>
+        <div class="grid" style="margin-top:12px">
+          <label>Lebar slitting (mm)<input data-k="slit" data-req type="number" min="0" inputmode="decimal"></label>
+          <label>Jumlah jalur (up cylinder)<input data-k="uc" data-req type="number" min="1" inputmode="numeric"></label>
+          <label>Tambahan lebar / trim (mm)<input data-k="trim" type="number" min="0" inputmode="decimal"></label>
+          <label>Panjang roll (m)<input data-k="rollLen" data-req type="number" min="1" inputmode="decimal"></label>
+          <label>Panjang produksi (m)<input data-k="runLen" data-req type="number" min="1" inputmode="decimal"></label>
+        </div>
+        <div class="hint" id="widthHint"></div>
+      </section>
+
+      <!-- 2 -->
+      <section class="card" id="sec-2">
+        <div class="card-head"><h2><span class="step-no">2</span>Bahan</h2></div>
+        <p class="desc">Tulis bahan dari luar ke dalam. Tebal dalam mikron (µm). Harga bahan dalam dolar ($).</p>
+        <div id="layers"></div>
+        <button class="btn add" id="addL" type="button" style="width:100%">+ Tambah bahan</button>
+      </section>
+
+      <!-- 3 -->
+      <section class="card" id="sec-3">
+        <div class="card-head"><h2><span class="step-no">3</span>Cetak</h2></div>
+        <p class="desc">Jumlah warna, tingkat kesulitan, dan kecepatan mesin menentukan loss, waktu mesin, dan tinta.</p>
+        <div class="grid">
+          <label>Jumlah warna<input data-k="colors" type="number" min="0" step="1" inputmode="numeric"></label>
+          <label>Kecepatan mesin (meter per menit)<input data-k="speed" type="number" min="0" step="1" inputmode="numeric"></label>
+          <label>Biaya mesin (Rp per jam)<input data-k="machineRate" type="number" min="0" step="1000" inputmode="numeric"></label>
+        </div>
+        <div class="sub">Tingkat kesulitan cetak</div>
+        <div class="seg" role="group" aria-label="Tingkat kesulitan cetak">
+          <button type="button" data-diff="gampang">Gampang</button>
+          <button type="button" data-diff="susah">Susah</button>
+        </div>
+        <div class="grid" style="margin-top:12px;max-width:360px">
+          <label>Loss cetak (%)<input data-k="lossCetak" type="number" step="0.5" min="0" max="99" inputmode="decimal"></label>
+        </div>
+        <div class="hint" id="diffHint"></div>
+        <div class="sub">Tinta</div>
+        <div class="grid">
+          <label>Tinta (gram per meter lari, per warna)<input data-k="inkG" type="number" step="0.1" min="0" inputmode="decimal"></label>
+          <label>Harga tinta ($ per kg)<input data-k="inkP" type="number" step="0.01" min="0" inputmode="decimal"></label>
+          <label>Thinner (kali berat tinta)<input data-k="tlR" type="number" step="0.05" min="0" inputmode="decimal"></label>
+          <label>Harga thinner ($ per kg)<input data-k="tlP" type="number" step="0.01" min="0" inputmode="decimal"></label>
+        </div>
+        <div class="hint" id="inkHint"></div>
+        <div class="hint" id="machHint"></div>
+      </section>
+
+      <!-- 4 -->
+      <section class="card" id="sec-4">
+        <div class="card-head"><h2><span class="step-no">4</span>Laminasi</h2></div>
+        <p class="desc">Isi jumlah lapis lem. Untuk struktur tanpa laminasi, isi 0.</p>
+        <div class="grid">
+          <label>Jumlah lapis lem<input data-k="lamCount" type="number" min="0" step="1" inputmode="numeric"></label>
+          <label>Loss laminasi (%)<input data-k="lossLam" type="number" step="0.5" min="0" max="99" inputmode="decimal"></label>
+        </div>
+        <div id="lams" style="margin-top:14px"></div>
+        <div class="hint" id="lamHint"></div>
+      </section>
+
+      <!-- 5 -->
+      <section class="card" id="sec-5">
+        <div class="card-head"><h2><span class="step-no">5</span>Biaya tambahan dan harga jual</h2></div>
+        <div class="grid">
+          <label>Biaya tenaga kerja / T. Kerja (Rp per produksi)<input data-k="fixed" type="number" min="0" step="1000" inputmode="numeric"></label>
+          <label>Loss slitting (%)<input data-k="lossSlit" type="number" step="0.5" min="0" max="99" inputmode="decimal"></label>
+          <label>Keuntungan / profit (%)<input data-k="profit" type="number" step="0.5" inputmode="decimal"></label>
+          <label>Kurs (Rp per $1)<input data-k="kurs" type="number" min="0" step="10" inputmode="numeric"></label>
+          <label>PPN (%)<input data-k="ppn" type="number" step="0.5" min="0" inputmode="decimal"></label>
+        </div>
+        <div class="hint" id="lossHint"></div>
+      </section>
+    </div>
+
+    <aside>
+      <div class="side-card price-card">
+        <h3>Harga jual per roll (incl. PPN)</h3>
+        <div class="price" id="price">Rp 0</div>
+        <div class="price-sub" id="priceSub">Lengkapi data untuk melihat harga</div>
+        <button class="btn" id="openQ2" type="button">Buat penawaran harga</button>
+      </div>
+      <div class="warn" id="warn" hidden></div>
+      <div class="side-card">
+        <h3>Rincian biaya produksi</h3>
+        <dl>
+          <dt>Bahan</dt><dd id="oL">-</dd>
+          <dt>Tinta dan thinner</dt><dd id="oI">-</dd>
+          <dt>Mesin cetak</dt><dd id="oM">-</dd>
+          <dt>Lem</dt><dd id="oP">-</dd>
+          <dt>T. Kerja</dt><dd id="oF">-</dd>
+          <div class="sep"></div>
+          <dt class="tot">Total biaya produksi</dt><dd class="tot" id="oT">-</dd>
+        </dl>
+      </div>
+      <div class="side-card">
+        <h3>Per roll</h3>
+        <dl>
+          <dt>Roll per produksi</dt><dd id="oR">-</dd>
+          <dt>Total loss</dt><dd id="oLoss">-</dd>
+          <dt>Berat per roll</dt><dd id="oKg">-</dd>
+          <div class="sep"></div>
+          <dt>Biaya per roll</dt><dd id="oC">-</dd>
+          <dt>Dengan profit (sebelum PPN)</dt><dd id="oPr">-</dd>
+          <dt>PPN</dt><dd id="oPpn">-</dd>
+        </dl>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div id="bar">
+  <div><small>Harga per roll (incl. PPN)</small><b id="barV">Rp 0</b></div>
+  <button class="btn" id="barQ" type="button">Penawaran</button>
+</div>
+
+<div id="quote" role="dialog" aria-modal="true" aria-label="Penawaran harga">
+  <div class="qwrap">
+    <div class="qactions">
+      <strong>Penawaran harga</strong>
+      <div class="right">
+        <button class="btn" id="qClose" type="button">Tutup</button>
+        <button class="btn primary" id="qPrint" type="button">Cetak / simpan PDF</button>
+      </div>
+    </div>
+    <div class="qform">
+      <div class="grid">
+        <label>No. penawaran<input id="qNo" type="text"></label>
+        <label>Tanggal<input id="qDate" type="date"></label>
+        <label>Kepada (perusahaan)<input id="qTo" type="text"></label>
+        <label>UP (nama penerima)<input id="qUp" type="text"></label>
+        <label>Jumlah order (roll)<input id="qQty" type="number" min="1" value="10" inputmode="numeric"></label>
+        <label>Berlaku (hari)<input id="qValid" type="number" min="1" value="14" inputmode="numeric"></label>
+        <label>Pembayaran<input id="qPay" type="text" value="30 hari setelah barang diterima"></label>
+        <label>Ditandatangani oleh<input id="qSign" type="text"></label>
+      </div>
+      <label>Catatan<input id="qNote" type="text" value="Toleransi jumlah produksi +/- 10%. Harga belum termasuk ongkos kirim."></label>
+    </div>
+    <div class="preview"><div class="paper" id="paper"></div></div>
+  </div>
+</div>
+
+<script>
+/* ===== NILAI DEFAULT (ganti dengan angka perusahaan) ===== */
+const LOSS_DEFAULT = {
+  gampang: 10,   // PLACEHOLDER: loss cetak gampang
+  susah: 25      // loss cetak susah (sesuai PRINT.xls)
+};
+
+const PRESETS = {
+  "Tidak pakai contoh": null,
+  "OPP + PP (2 lapis)": {trim:20,fixed:55000,diff:"gampang",lossCetak:20,lossLam:0,lossSlit:0,colors:0,speed:0,machineRate:0,inkG:0,tlR:.8,lamCount:0,layers:[["OPP",20,.91,1.26],["PP putih",18,.91,1.23]],lam:[]},
+  "OPP + PP + CPP (3 lapis)": {trim:20,fixed:60000,diff:"gampang",lossCetak:20,lossLam:0,lossSlit:0,colors:4,speed:0,machineRate:0,inkG:0,tlR:.8,lamCount:0,layers:[["OPP",20,.91,1.28],["PP",20,.91,1.24],["CPP",40,.91,1.43]],lam:[]},
+  "Laminasi dry (Nylon + LLDPE)": {trim:25,fixed:35000,diff:"gampang",lossCetak:20,lossLam:0,lossSlit:0,colors:5,speed:0,machineRate:0,inkG:0,tlR:.8,lamCount:1,layers:[["Nylon",15,1.16,4.1],["LLDPE",50,.92,2.46]],lam:[[3,3.67]]},
+  "Laminasi dry ganda (PET / ALU / CPP)": {trim:20,fixed:55000,diff:"gampang",lossCetak:20,lossLam:0,lossSlit:0,colors:0,speed:0,machineRate:0,inkG:0,tlR:.8,lamCount:2,layers:[["PET",12,1.4,1.25],["ALU",6.5,2.71,3.9],["CPP",50,.91,1.33]],lam:[[3,3.67],[3,4.67]]},
+  "Ekstrusi (Nylon / PE / LLDPE)": {trim:25,fixed:50000,diff:"gampang",lossCetak:0,lossLam:20,lossSlit:0,colors:0,speed:0,machineRate:0,inkG:0,tlR:.8,lamCount:1,layers:[["Nylon",15,1.16,4.1],["PE",15,.92,2],["LLDPE",50,.92,2.46]],lam:[[3,4.33]]},
+  "Sandwich (PET / PE / ALU / C4)": {trim:20,fixed:65000,diff:"gampang",lossCetak:0,lossLam:20,lossSlit:0,colors:0,speed:0,machineRate:0,inkG:0,tlR:.8,lamCount:2,layers:[["PET",12,1.4,2.15],["PE",15,.91,2],["ALU",7,2.75,5.4],["C4",25,.91,2.35]],lam:[[3,4.33],[3,7.33]]},
+  "Cetak saja (OPP)": {trim:20,fixed:35000,diff:"susah",lossCetak:25,lossLam:0,lossSlit:0,colors:5,speed:0,machineRate:0,inkG:0,tlR:.8,lamCount:0,layers:[["OPP",20,.91,1.2]],lam:[]},
+  "PVC shrink": {trim:25,fixed:0,diff:"gampang",lossCetak:0,lossLam:0,lossSlit:0,colors:0,speed:0,machineRate:0,inkG:0,tlR:.6,lamCount:0,layers:[["PVC",0,1.35,0]],lam:[]},
+  "Kosong (isi sendiri)": {trim:20,fixed:0,diff:"gampang",lossCetak:0,lossLam:0,lossSlit:0,colors:0,speed:0,machineRate:0,inkG:0,tlR:.8,lamCount:0,layers:[["Lapisan 1",0,1,0]],lam:[]}
+};
+
+const S = {order:"",cust:"",slit:400,uc:2,rollLen:1000,runLen:4000,trim:20,
+  diff:"gampang",lossCetak:LOSS_DEFAULT.gampang,speed:150,machineRate:0,
+  colors:0,inkG:0,inkP:3.8,tlR:.8,tlP:1.1,
+  lamCount:0,lossLam:0,lossSlit:0,fixed:55000,profit:25,kurs:16800,ppn:11,
+  layers:[],lam:[]};
+const LAST = {idr:0, rolls:0};
+
+const $ = id => document.getElementById(id);
+const n = v => { const x = parseFloat(v); return isFinite(x) ? x : 0; };
+const esc = t => String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const usd = v => "$ " + v.toLocaleString("id-ID",{minimumFractionDigits:2,maximumFractionDigits:2});
+const rp  = v => "Rp " + Math.round(v).toLocaleString("id-ID");
+const kg  = v => v.toLocaleString("id-ID",{minimumFractionDigits:1,maximumFractionDigits:2}) + " kg";
+
+/* ---------- tampilan ---------- */
+function renderLayers(){
+  $("layers").innerHTML = S.layers.length ? S.layers.map((l,i)=>`
+    <div class="item" data-i="${i}">
+      <div class="item-head">
+        <input data-l="name" value="${esc(l.name)}" aria-label="Nama bahan">
+        <button class="btn ghost" data-del="l" type="button">Hapus</button>
+      </div>
+      <div class="fields">
+        <label>Tebal (µm)<input data-l="mic" type="number" step="0.5" min="0" inputmode="decimal" value="${l.mic}"></label>
+        <label>Berat jenis<input data-l="sg" type="number" step="0.01" min="0" inputmode="decimal" value="${l.sg}"></label>
+        <label>Harga ($ per kg)<input data-l="price" type="number" step="0.01" min="0" inputmode="decimal" value="${l.price}"></label>
+      </div>
+      <div class="hint" data-hint="l"></div>
+    </div>`).join("") : '<p class="empty">Belum ada bahan. Tekan "+ Tambah bahan".</p>';
+}
+
+function renderLams(){
+  while(S.lam.length < S.lamCount) S.lam.push({gsm:3,lemP:3.67});
+  S.lam = S.lam.slice(0, S.lamCount);
+  $("lams").innerHTML = S.lam.map((p,i)=>`
+    <div class="item" data-i="${i}">
+      <div class="item-head"><b style="font-size:14px">Lapis ${i+1}</b></div>
+      <div class="fields">
+        <label>Lem (gram per m²)<input data-p="gsm" type="number" step="0.1" min="0" inputmode="decimal" value="${p.gsm}"></label>
+        <label>Harga lem ($ per kg)<input data-p="lemP" type="number" step="0.01" min="0" inputmode="decimal" value="${p.lemP}"></label>
+      </div>
+      <div class="hint" data-hint="p"></div>
+    </div>`).join("");
+}
+
+function syncInputs(){
+  document.querySelectorAll("[data-k]").forEach(e => e.value = S[e.dataset.k]);
+  document.querySelectorAll("[data-diff]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.diff===S.diff)));
+}
+
+function applyPreset(name){
+  const p = PRESETS[name];
+  if(!p) return;
+  Object.assign(S,{trim:p.trim,fixed:p.fixed,diff:p.diff,lossCetak:p.lossCetak,lossLam:p.lossLam,lossSlit:p.lossSlit,
+    colors:p.colors,speed:p.speed,machineRate:p.machineRate,inkG:p.inkG,tlR:p.tlR,lamCount:p.lamCount});
+  S.layers = p.layers.map(([name,mic,sg,price])=>({name,mic,sg,price}));
+  S.lam = p.lam.map(([gsm,lemP])=>({gsm,lemP}));
+  syncInputs(); renderLayers(); renderLams(); calc();
+}
+
+/* ---------- perhitungan (hasil dalam rupiah) ---------- */
+function calc(){
+  const kurs = n(S.kurs);
+  const matW = n(S.slit)*n(S.uc) + n(S.trim);
+  const wm = matW/1000, run = n(S.runLen), roll = n(S.rollLen), uc = n(S.uc);
+  const ready = n(S.slit)>0 && uc>0 && run>0 && roll>0;
+
+  // bahan
+  let layerUsd = 0, layerKg = 0;
+  S.layers.forEach((l,i)=>{
+    const w = wm*run*(n(l.mic)/1000)*n(l.sg);
+    const c = w*n(l.price);
+    layerUsd += c; layerKg += w;
+    const h = document.querySelector(`#layers [data-i="${i}"] [data-hint="l"]`);
+    if(h) h.textContent = `≈ ${kg(w)} per produksi · ${rp(c*kurs)}`;
+  });
+
+  // cetak: tinta, thinner, mesin
+  const inkKg = run*n(S.colors)*n(S.inkG)/1000;
+  const thinKg = inkKg*n(S.tlR);
+  const inkUsd = inkKg*n(S.inkP) + thinKg*n(S.tlP);
+  const hours = n(S.speed)>0 ? (run/n(S.speed))/60 : 0;
+  const machRp = hours*n(S.machineRate);
+  $("inkHint").textContent = inkKg>0
+    ? `Tinta = ${n(S.colors)} warna × ${n(S.inkG)} gram × ${run} m = ${kg(inkKg)}. Thinner ${kg(thinKg)}.`
+    : "Isi jumlah warna dan gram tinta untuk menghitung biaya tinta.";
+  $("machHint").textContent = hours>0
+    ? `Waktu cetak ≈ ${hours.toFixed(1)} jam (${run} m ÷ ${n(S.speed)} m per menit)`
+    : "Isi kecepatan mesin untuk menghitung waktu cetak.";
+  $("diffHint").textContent = S.diff==="susah"
+    ? `Cetak susah: loss default ${LOSS_DEFAULT.susah}%. Boleh diubah.`
+    : `Cetak gampang: loss default ${LOSS_DEFAULT.gampang}%. Boleh diubah.`;
+
+  // laminasi
+  let lemKg = 0, lemUsd = 0;
+  S.lam.forEach((p,i)=>{
+    const w = wm*run*n(p.gsm)/1000;
+    const c = w*n(p.lemP);
+    lemKg += w; lemUsd += c;
+    const h = document.querySelector(`#lams [data-i="${i}"] [data-hint="p"]`);
+    if(h) h.textContent = `≈ ${kg(w)} lem per produksi · ${rp(c*kurs)}`;
+  });
+  $("lamHint").textContent = S.lam.length ? `Total lem ≈ ${kg(lemKg)} per produksi.` : "";
+
+  // total biaya produksi (rupiah)
+  const layerRp = layerUsd*kurs, inkRp = inkUsd*kurs, lemRp = lemUsd*kurs, fixRp = n(S.fixed);
+  const total = layerRp + inkRp + machRp + lemRp + fixRp;
+
+  // loss: dijumlahkan seperti di file RUMUS_OPP-PP
+  const lossTotal = n(S.lossCetak)+n(S.lossLam)+n(S.lossSlit);
+  const yieldF = Math.max(0, 100-lossTotal)/100;
+  const rawRolls = ready ? (run/roll)*uc : 0;
+  const rolls = rawRolls*yieldF;
+  const perRoll = rolls>0 ? total/rolls : 0;
+  const withP = perRoll*(1+n(S.profit)/100);
+  const ppnRp = withP*n(S.ppn)/100;
+  const inc = withP + ppnRp;
+  const totalKg = layerKg + inkKg + thinKg + lemKg;
+  const kgRoll = rolls>0 ? totalKg/rawRolls : 0;
+
+  LAST.idr = withP; LAST.rolls = rolls;
+
+  $("lossHint").textContent = ready
+    ? `Total loss ${lossTotal.toFixed(1)}%: dari ${rawRolls.toFixed(1)} roll kotor, tersisa ${rolls.toFixed(1)} roll bagus.`
+    : "";
+  $("widthHint").textContent = matW>0 ? `Lebar bahan = ${n(S.slit)} mm × ${uc} jalur + ${n(S.trim)} mm trim = ${matW} mm` : "";
+
+  const dash = v => rolls>0 ? v : "-";
+  $("oR").textContent = rolls>0 ? rolls.toFixed(1) : "-";
+  $("oLoss").textContent = lossTotal.toFixed(1)+" %";
+  $("oKg").textContent = kgRoll>0 ? kgRoll.toFixed(2)+" kg" : "-";
+  $("oL").textContent = rp(layerRp);
+  $("oI").textContent = rp(inkRp);
+  $("oM").textContent = rp(machRp);
+  $("oP").textContent = rp(lemRp);
+  $("oF").textContent = rp(fixRp);
+  $("oT").textContent = rp(total);
+  $("oC").textContent = dash(rp(perRoll));
+  $("oPr").textContent = dash(rp(withP));
+  $("oPpn").textContent = dash(rp(ppnRp)) + ` (${n(S.ppn)}%)`;
+
+  // ringkasan
+  $("fCust").textContent = S.cust || "-";
+  $("fOrder").textContent = S.order || "-";
+  $("fW").textContent = matW>0 ? matW+" mm" : "-";
+  $("fR").textContent = rolls>0 ? rolls.toFixed(1)+" roll" : "-";
+  $("fLoss").textContent = lossTotal.toFixed(1)+" %";
+  $("fKurs").textContent = kurs>0 ? rp(kurs)+" per $1" : "-";
+
+  $("price").textContent = rp(inc);
+  $("barV").textContent = rp(inc);
+  $("priceSub").textContent = rolls>0 ? `Sebelum PPN ${rp(withP)}` : "Lengkapi data untuk melihat harga";
+
+  const missing = [];
+  if(!(n(S.slit)>0)) missing.push("lebar slitting");
+  if(!(uc>0)) missing.push("jumlah jalur");
+  if(!(roll>0)) missing.push("panjang roll");
+  if(!(run>0)) missing.push("panjang produksi");
+  if(!S.layers.length) missing.push("bahan");
+  if(!(kurs>0)) missing.push("kurs");
+  if(lossTotal>=100) missing.push("total loss harus di bawah 100%");
+  document.querySelectorAll("[data-req]").forEach(e=>{ e.classList.toggle("bad", n(e.value)<=0); });
+  const w = $("warn");
+  w.hidden = missing.length===0;
+  w.textContent = missing.length ? "Harga belum bisa dihitung. Lengkapi: " + missing.join(", ") + "." : "";
+  $("status").textContent = missing.length ? "Belum lengkap" : "Siap";
+  $("status").className = "badge" + (missing.length ? " no" : "");
+}
+
+/* ---------- interaksi ---------- */
+document.addEventListener("input", e => {
+  const t = e.target;
+  const row = t.closest(".item");
+  if(t.dataset.k){
+    S[t.dataset.k] = t.type==="number" ? n(t.value) : t.value;
+    if(t.dataset.k==="lamCount") renderLams();
+  } else if(t.dataset.l && row){
+    const f = t.dataset.l;
+    S.layers[row.dataset.i][f] = f==="name" ? t.value : n(t.value);
+  } else if(t.dataset.p && row){
+    S.lam[row.dataset.i][t.dataset.p] = n(t.value);
+  } else return;
+  calc();
+});
+
+document.addEventListener("click", e => {
+  const t = e.target;
+  if(t.dataset.diff){
+    S.diff = t.dataset.diff;
+    S.lossCetak = LOSS_DEFAULT[S.diff];
+    syncInputs(); calc();
+    return;
+  }
+  if(t.dataset.del){
+    const i = +t.closest(".item").dataset.i;
+    S.layers.splice(i,1);
+    renderLayers(); calc();
+  }
+});
+
+$("addL").onclick = () => { S.layers.push({name:"Bahan baru",mic:0,sg:1,price:0}); renderLayers(); calc(); };
+$("preset").innerHTML = Object.keys(PRESETS).map(k=>`<option>${esc(k)}</option>`).join("");
+$("preset").onchange = e => applyPreset(e.target.value);
+
+/* ---------- penawaran ---------- */
+function renderQuote(){
+  const price = Math.round(LAST.idr);
+  const qty = Math.max(n($("qQty").value),1);
+  const sub = price*qty;
+  const ppnV = Math.round(sub*n(S.ppn)/100);
+  const tot = sub+ppnV;
+  const d = $("qDate").value ? new Date($("qDate").value+"T00:00:00") : new Date();
+  const ds = d.toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"});
+  const struktur = S.layers.map(l=>`${esc(l.name)} ${l.mic} µm`).join(" / ") || "-";
+
+  $("paper").innerHTML = `
+    <div class="hd">
+      <div><h3>PENAWARAN HARGA</h3>
+        <div class="co"><b>PT. Putra Mandiri Intipack</b><br>Desa Watesari, Kec. Balongbendo, Kab. Sidoarjo, Jawa Timur 61263<br>Telp. +62 31 898 6026</div></div>
+      <div style="text-align:right">No. ${esc($("qNo").value)}<br>${ds}</div>
+    </div>
+    <div class="meta">
+      <span>Kepada</span><span>: ${esc($("qTo").value || S.cust)}</span>
+      <span>UP</span><span>: ${esc($("qUp").value)}</span>
+      <span>Perihal</span><span>: ${esc(S.order || "Flexible packaging")}</span>
+    </div>
+    <p>Dengan hormat, bersama ini kami sampaikan penawaran harga sebagai berikut:</p>
+    <table>
+      <tr><th>Deskripsi</th><th class="r">Jumlah (roll)</th><th class="r">Harga / roll</th><th class="r">Total</th></tr>
+      <tr>
+        <td><b>${esc(S.order || "Flexible packaging")}</b><br>Struktur: ${struktur}<br>Lebar slitting ${n(S.slit)} mm, panjang ${n(S.rollLen)} m per roll</td>
+        <td class="r">${qty.toLocaleString("id-ID")}</td><td class="r">${rp(price)}</td><td class="r">${rp(sub)}</td>
+      </tr>
+      <tr><td colspan="3" class="r">Subtotal</td><td class="r">${rp(sub)}</td></tr>
+      <tr><td colspan="3" class="r">PPN ${n(S.ppn)}%</td><td class="r">${rp(ppnV)}</td></tr>
+      <tr><td colspan="3" class="r"><b>Total</b></td><td class="r"><b>${rp(tot)}</b></td></tr>
+    </table>
+    <p><b>Ketentuan:</b><br>1. Penawaran berlaku ${n($("qValid").value)} hari sejak tanggal di atas.<br>2. Pembayaran: ${esc($("qPay").value)}.<br>3. ${esc($("qNote").value)}</p>
+    <p>Demikian penawaran ini kami sampaikan. Terima kasih atas kepercayaan Anda.</p>
+    <div class="sig">
+      <div>Hormat kami,<span>${esc($("qSign").value)}</span></div>
+      <div>Disetujui,<span>&nbsp;</span></div>
+    </div>`;
+}
+
+function openQuote(){
+  if(LAST.rolls<=0){ alert("Lengkapi data pesanan, bahan, dan kurs terlebih dahulu."); return; }
+  if(!$("qTo").value) $("qTo").value = S.cust;
+  renderQuote();
+  $("quote").classList.add("on");
+  $("quote").scrollTop = 0;
+}
+$("openQ").onclick = openQuote;
+$("openQ2").onclick = openQuote;
+$("barQ").onclick = openQuote;
+$("qClose").onclick = () => $("quote").classList.remove("on");
+$("qPrint").onclick = () => window.print();
+document.querySelectorAll("#quote .qform input").forEach(el => el.addEventListener("input", renderQuote));
+$("qDate").value = new Date().toISOString().slice(0,10);
+$("qNo").value = "PMI/" + new Date().getFullYear() + "/001";
+
+/* ---------- mulai ---------- */
+$("preset").value = "OPP + PP + CPP (3 lapis)";
+applyPreset("OPP + PP + CPP (3 lapis)");
+syncInputs(); renderLayers(); renderLams(); calc();
+</script>
+</body>
+</html>
